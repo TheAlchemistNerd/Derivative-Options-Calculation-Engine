@@ -1,0 +1,41 @@
+# Compiled Java class files
+*.class
+
+# Executable JAR files
+*.jar
+
+# IDE specific files and directories
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+nbproject/
+build/
+
+# Maven specific files and directories
+target/
+pom.xml.backup*
+.mvn/wrapper/maven-wrapper.jar.sha256
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle specific files and directories
+.gradle/
+build/
+settings.gradle.kts.lockfile
+settings.gradle.lockfile
+*.lockfile
+gradle-app.setting
+gradle-build.setting
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Operating system specific files
+.DS_Store
+Thumbs.db
