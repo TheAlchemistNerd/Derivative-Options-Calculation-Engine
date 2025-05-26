@@ -123,31 +123,50 @@ public class OptionAnalysis {
         );
     }
 
-    public static double blackScholesCall(double S, double K, double T, double r, double sigma) {
-        NormalDistribution normal = new NormalDistribution();
-        double d1 = (Math.log(S / K) + (r + sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
-        double d2 = d1 - sigma * Math.sqrt(T);
-        return S * normal.cumulativeProbability(d1) - K * Math.exp(-r * T) * normal.cumulativeProbability(d2);
+    public enum OptionType {
+        CALL,
+        PUT
     }
 
-    public static double blackScholesPut(double S, double K, double T, double r, double sigma) {
-        NormalDistribution normal = new NormalDistribution();
+    private static double[] calculateD1AndD2(double S, double K, double T, double r, double sigma) {
         double d1 = (Math.log(S / K) + (r + sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
         double d2 = d1 - sigma * Math.sqrt(T);
-        return K * Math.exp(-r * T) * normal.cumulativeProbability(-d2) - S * normal.cumulativeProbability(-d1);
+        return new double[]{d1, d2};
+    }
+
+    public static double blackScholesOptionPrice(OptionType optionType, double S, double K, double T, double r, double sigma) {
+        NormalDistribution normal = new NormalDistribution();
+        double[] dValues = calculateD1AndD2(S, K, T, r, sigma);
+        double d1 = dValues[0];
+        double d2 = dValues[1];
+
+        // Calculate common terms once
+        double N_d1 = normal.cumulativeProbability(d1);
+        double N_d2 = normal.cumulativeProbability(d2);
+        double N_negD1 = 1 - N_d1; // N(-x) = 1 - N(x)
+        double N_negD2 = 1 - N_d2; // N(-x) = 1 - N(x)
+        double exp_negRT = Math.exp(-r * T);
+
+        if (optionType == OptionType.CALL) {
+            return S * N_d1 - K * exp_negRT * N_d2;
+        } else if (optionType == OptionType.PUT) {
+            return K * exp_negRT * N_negD2 - S * N_negD1;
+        } else {
+            throw new IllegalArgumentException("Invalid option type: " + optionType);
+        }
     }
 
     public static Map<String, List<Double>> processOptions(Map<String, Double> strikes, double T, double r, double sigma) {
         double S = strikes.get("S");
         List<Double> callPrices = List.of(
-                blackScholesCall(S, strikes.get("K_110"), T, r, sigma),
-                blackScholesCall(S, strikes.get("K_100"), T, r, sigma),
-                blackScholesCall(S, strikes.get("K_95"), T, r, sigma)
+                blackScholesOptionPrice(OptionType.CALL, S, strikes.get("K_110"), T, r, sigma),
+                blackScholesOptionPrice(OptionType.CALL, S, strikes.get("K_100"), T, r, sigma),
+                blackScholesOptionPrice(OptionType.CALL, S, strikes.get("K_95"), T, r, sigma)
         );
         List<Double> putPrices = List.of(
-                blackScholesPut(S, strikes.get("K_110"), T, r, sigma),
-                blackScholesPut(S, strikes.get("K_100"), T, r, sigma),
-                blackScholesPut(S, strikes.get("K_95"), T, r, sigma)
+                blackScholesOptionPrice(OptionType.PUT, S, strikes.get("K_110"), T, r, sigma),
+                blackScholesOptionPrice(OptionType.PUT, S, strikes.get("K_100"), T, r, sigma),
+                blackScholesOptionPrice(OptionType.PUT, S, strikes.get("K_95"), T, r, sigma)
         );
         return Map.of("Call Prices", callPrices, "Put Prices", putPrices);
     }
